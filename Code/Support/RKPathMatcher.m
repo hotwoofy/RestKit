@@ -118,11 +118,11 @@ NSString *RKEncodeURLString(NSString *unencodedString) {
 - (BOOL)itMatchesAndHasParsedArguments:(NSDictionary **)arguments tokenizeQueryStrings:(BOOL)shouldTokenize {
     NSAssert(self.socPattern != NULL, @"Matcher has no established pattern.  Instantiate it using matcherWithPattern: before attempting a pattern match.");
     NSMutableDictionary *argumentsCollection = [NSMutableDictionary dictionary];
-    if ([self bifurcateSourcePathFromQueryParameters]) {
+    /*if ([self bifurcateSourcePathFromQueryParameters]) {
         if (shouldTokenize) {
             [argumentsCollection addEntriesFromDictionary:self.queryParameters];
         }
-    }
+    }*/
     if (![self matches])
         return NO;
     if (!arguments) {
