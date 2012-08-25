@@ -104,10 +104,10 @@ NSString *RKEncodeURLString(NSString *unencodedString) {
     return matcher;
 }
 
-- (BOOL)matches
+- (BOOL)matches:(NSString *)string
 {
-    NSAssert( (self.socPattern != NULL && self.rootPath != NULL), @"Matcher is insufficiently configured.  Before attempting pattern matching, you must provide a path string and a pattern to match it against.");
-    return [self.socPattern stringMatches:self.rootPath];
+    NSAssert( (self.socPattern != NULL && string != NULL), @"Matcher is insufficiently configured.  Before attempting pattern matching, you must provide a path string and a pattern to match it against.");
+    return [self.socPattern stringMatches:string];
 }
 
 - (BOOL)bifurcateSourcePathFromQueryParameters
@@ -121,23 +121,23 @@ NSString *RKEncodeURLString(NSString *unencodedString) {
     return NO;
 }
 
-- (BOOL)itMatchesAndHasParsedArguments:(NSDictionary **)arguments tokenizeQueryStrings:(BOOL)shouldTokenize
+- (BOOL)itMatchesAndHasParsedArguments:(NSDictionary **)arguments tokenizeQueryStrings:(BOOL)shouldTokenize matchQueryStrings:(BOOL)shouldMatch
 {
     NSAssert(self.socPattern != NULL, @"Matcher has no established pattern.  Instantiate it using matcherWithPattern: before attempting a pattern match.");
-    NSMutableDictionary *argumentsCollection = [NSMutableDictionary dictionary];
-    /*if ([self bifurcateSourcePathFromQueryParameters]) {
-        if (shouldTokenize) {
-            [argumentsCollection addEntriesFromDictionary:self.queryParameters];
-        }
-    }*/
-    if (![self matches])
+    [self bifurcateSourcePathFromQueryParameters];
+    if (![self matches:shouldMatch ? self.sourcePath : self.rootPath])
         return NO;
     if (!arguments) {
         return YES;
     }
-    NSDictionary *extracted = [self.socPattern parameterDictionaryFromSourceString:self.rootPath];
-    if (extracted)
+    NSMutableDictionary *argumentsCollection = [NSMutableDictionary dictionary];
+    if([self.socPattern stringMatches:self.rootPath]) {
+        NSDictionary *extracted = [self.socPattern parameterDictionaryFromSourceString:self.rootPath];
         [argumentsCollection addEntriesFromDictionary:[extracted dictionaryByReplacingPercentEscapesInEntries]];
+    }
+    if(shouldTokenize) {
+        [argumentsCollection addEntriesFromDictionary:self.queryParameters];
+    }
     *arguments = argumentsCollection;
     return YES;
 }
@@ -147,14 +147,29 @@ NSString *RKEncodeURLString(NSString *unencodedString) {
     NSAssert(patternString != NULL, @"Pattern string must not be empty in order to perform patterm matching.");
     patternString = RKPathPatternFindAndReplaceParensWithColons(patternString);
     self.socPattern = [SOCPattern patternWithString:patternString];
-    return [self itMatchesAndHasParsedArguments:arguments tokenizeQueryStrings:shouldTokenize];
+    return [self itMatchesAndHasParsedArguments:arguments tokenizeQueryStrings:shouldTokenize matchQueryStrings:NO];
+}
+
+- (BOOL)matchesPattern:(NSString *)patternString matchQueryString:(BOOL)shouldMatchQueryString parsedArguments:(NSDictionary **)arguments;
+{
+    NSAssert(patternString != NULL, @"Pattern string must not be empty in order to perform patterm matching.");
+    patternString = RKPathPatternFindAndReplaceParensWithColons(patternString);
+    self.socPattern = [SOCPattern patternWithString:patternString];
+    return [self itMatchesAndHasParsedArguments:arguments tokenizeQueryStrings:shouldMatchQueryString matchQueryStrings:shouldMatchQueryString];
 }
 
 - (BOOL)matchesPath:(NSString *)sourceString tokenizeQueryStrings:(BOOL)shouldTokenize parsedArguments:(NSDictionary **)arguments
 {
     self.sourcePath = sourceString;
     self.rootPath = sourceString;
-    return [self itMatchesAndHasParsedArguments:arguments tokenizeQueryStrings:shouldTokenize];
+    return [self itMatchesAndHasParsedArguments:arguments tokenizeQueryStrings:shouldTokenize matchQueryStrings:NO];
+}
+
+- (BOOL)matchesPath:(NSString *)sourceString matchQueryString:(BOOL)shouldMatchQueryString parsedArguments:(NSDictionary **)arguments
+{
+    self.sourcePath = sourceString;
+    self.rootPath = sourceString;
+    return [self itMatchesAndHasParsedArguments:arguments tokenizeQueryStrings:shouldMatchQueryString matchQueryStrings:shouldMatchQueryString];
 }
 
 - (NSString *)pathFromObject:(id)object

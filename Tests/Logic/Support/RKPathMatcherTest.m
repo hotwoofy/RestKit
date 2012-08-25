@@ -38,6 +38,37 @@
 
 }
 
+- (void)testShouldMatchPatternsInQueryArguments
+{
+    NSDictionary *arguments = nil;
+    RKPathMatcher *pathMatcher = [RKPathMatcher matcherWithPath:@"/this/is/my/backend?foo=bar&this=that"];
+    BOOL isMatchingPattern = [pathMatcher matchesPattern:@"/this/is/my/backend?foo=:bar&this=:that" matchQueryString:YES parsedArguments:&arguments];
+    assertThatBool(isMatchingPattern, is(equalToBool(YES)));
+    assertThat(arguments, isNot(empty()));
+    assertThat(arguments, hasEntries(@"foo", @"bar", @"this", @"that", nil));
+
+}
+
+- (void)testShouldMatchQueryArguments
+{
+    NSDictionary *arguments = nil;
+    RKPathMatcher *pathMatcher = [RKPathMatcher matcherWithPattern:@"/this/is/my/backend?foo=:bar&this=:that"];
+    BOOL isMatchingPattern = [pathMatcher matchesPath:@"/this/is/my/backend?foo=bar&this=that" matchQueryString:YES parsedArguments:&arguments];
+    assertThatBool(isMatchingPattern, is(equalToBool(YES)));
+    assertThat(arguments, isNot(empty()));
+    assertThat(arguments, hasEntries(@"foo", @"bar", @"this", @"that", nil));
+}
+
+- (void)testShouldMatchBlankQueryArguments
+{
+    NSDictionary *arguments = nil;
+    RKPathMatcher *pathMatcher = [RKPathMatcher matcherWithPattern:@"/this/is/my/backend?foo=:bar&this=:that"];
+    BOOL isMatchingPattern = [pathMatcher matchesPath:@"/this/is/my/backend?foo=&this=that" matchQueryString:YES parsedArguments:&arguments];
+    assertThatBool(isMatchingPattern, is(equalToBool(YES)));
+    assertThat(arguments, isNot(empty()));
+    assertThat(arguments, hasEntries(@"foo", @"", @"this", @"that", nil));
+}
+
 - (void)testShouldMatchPathsWithEscapedArguments
 {
     NSDictionary *arguments = nil;

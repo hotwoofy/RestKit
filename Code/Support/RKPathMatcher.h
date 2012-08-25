@@ -70,6 +70,29 @@
 - (BOOL)matchesPattern:(NSString *)patternString tokenizeQueryStrings:(BOOL)shouldTokenize parsedArguments:(NSDictionary **)arguments;
 
 /**
+ Determines if the path string matches the provided pattern, and yields a dictionary with the resulting
+ matched key/value pairs.  Use of this method should be preceded by matcherWithPath:
+ Pattern strings should include encoded parameter keys, delimited by a single colon at the
+ beginning of the key name.
+ 
+ *NOTE 1 *- Numerous colon-encoded parameter keys can be joined in a long pattern, but each key must be
+ separated by at least one unmapped character.  For instance, /:key1:key2:key3/ is invalid, whereas
+ /:key1/:key2/:key3/ is acceptable.
+ 
+ *NOTE 2 *- The pattern matcher supports KVM, so :key1.otherKey normally resolves as it would in any other KVM
+ situation, ... otherKey is a sub-key on a the object represented by key1.  This presents problems in circumstances where
+ you might want to build a pattern like /:filename.json, where the dot isn't intended as a sub-key on the filename, but rather
+ part of the json static string.  In these instances, you need to escape the dot with two backslashes, like so:
+ /:filename\\.json
+ 
+ @param patternString The pattern to use for evaluating, such as /:entityName/:stateID?chamber=:chamber
+ @param shouldMatchQueryString If YES, the contents of the query string will be taken into account while matching, and any query parameters will be tokenized and inserted into the parsed argument dictionary.
+ @param arguments A pointer to a dictionary that contains the key/values from the pattern (and parameter) matching.
+ @return A boolean indicating if the path string successfully matched the pattern.
+ */
+- (BOOL)matchesPattern:(NSString *)patternString matchQueryString:(BOOL)shouldMatchQueryString parsedArguments:(NSDictionary **)arguments;
+
+/**
  Creates an RKPathMatcher starting from a pattern string.  This method should be followed by
  matchesPath:tokenizeQueryStrings:parsedArguments:  Patterns should include encoded parameter keys,
  delimited by a single colon at the beginning of the key name.
@@ -89,16 +112,28 @@
  */
 + (RKPathMatcher *)matcherWithPattern:(NSString *)patternString;
 
+
 /**
  Determines if the provided resource path string matches a pattern, and yields a dictionary with the resulting
  matched key/value pairs.  Use of this method should be preceded by matcherWithPattern:
-
- @param pathString The string to evaluate and parse, such as /districts/tx/upper/?apikey=GC5512354
+ 
+ @param pathString The string to evaluate and parse, such as /districts/tx?chamber=upper
  @param shouldTokenize If YES, any query parameters will be tokenized and inserted into the parsed argument dictionary.
  @param arguments A pointer to a dictionary that contains the key/values from the pattern (and parameter) matching.
  @return A boolean indicating if the path string successfully matched the pattern.
  */
 - (BOOL)matchesPath:(NSString *)pathString tokenizeQueryStrings:(BOOL)shouldTokenize parsedArguments:(NSDictionary **)arguments;
+
+/**
+ Determines if the provided resource path string matches a pattern, and yields a dictionary with the resulting
+ matched key/value pairs.  Use of this method should be preceded by matcherWithPattern:
+ 
+ @param pathString The string to evaluate and parse, such as /districts/tx/upper/?apikey=GC5512354
+ @param shouldMatchQueryString If YES, the contents of the query string will be taken into account while matching, and any query parameters will be tokenized and inserted into the parsed argument dictionary.
+ @param arguments A pointer to a dictionary that contains the key/values from the pattern (and parameter) matching.
+ @return A boolean indicating if the path string successfully matched the pattern.
+ */
+- (BOOL)matchesPath:(NSString *)pathString matchQueryString:(BOOL)shouldMatchQueryString parsedArguments:(NSDictionary **)arguments;
 
 /**
  This generates a resource path by interpolating the properties of the 'object' argument, assuming the existence
